@@ -7,6 +7,7 @@ import { Scheda, SchedaDomanda } from "@/components/Schede";
 import { Chip, Icona, LessonChrome, PrimaryButton, SecondaryButton, SheetScheda } from "@/components/ui";
 import { LEZIONI, PERCORSO, QUIZ } from "@/lib/percorso";
 import { useSchede } from "@/lib/navigazione";
+import { GIA_ASSICURATO } from "@/lib/rinnovo";
 
 export function Sessione() {
   const { params, vai, esci } = useSchede();
@@ -38,13 +39,15 @@ function ConfermaUscita({ onResta, onEsci }: { onResta: () => void; onEsci: () =
 }
 
 function Lezione({ indice, c, vai, esci }: { indice: number; c: number } & Nav) {
-  const { track, progresso, completaLezione } = useUtente();
+  const { track, progresso, completaLezione, utente } = useUtente();
   const [uscita, setUscita] = useState(false);
   const lezione = LEZIONI[indice];
-  const card = lezione.card[Math.min(c, lezione.card.length - 1)];
+  // La card "Il tuo rinnovo" la vede solo chi è già assicurato.
+  const schede = lezione.card.filter((k) => k.tipo !== "rinnovo" || utente.onboarding_intent === GIA_ASSICURATO);
+  const card = schede[Math.min(c, schede.length - 1)];
 
   const avanti = () => {
-    if (c < lezione.card.length - 1) return vai({ n: indice + 1, c: c + 1 });
+    if (c < schede.length - 1) return vai({ n: indice + 1, c: c + 1 });
     track("Lesson Completed", { lesson_number: indice + 1 });
     // Kiwi solo la prima volta: il ripasso non ne dà.
     const nuova = indice >= progresso.lezioni;
@@ -54,7 +57,7 @@ function Lezione({ indice, c, vai, esci }: { indice: number; c: number } & Nav) 
 
   return (
     <div className="flex flex-1 flex-col">
-      <LessonChrome progress={(c / lezione.card.length) * 100} onEsci={() => setUscita(true)} />
+      <LessonChrome progress={(c / schede.length) * 100} onEsci={() => setUscita(true)} />
       {/* key: tornando indietro la card riparte pulita */}
       <Scheda key={c} card={card} onAvanti={avanti} />
       {uscita && <ConfermaUscita onResta={() => setUscita(false)} onEsci={esci} />}

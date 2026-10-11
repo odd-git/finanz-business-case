@@ -7,6 +7,7 @@
 // - vero_falso: "Mettiti alla prova", due bottoni
 // - sondaggio: "Piccolo sondaggio", nessuna risposta giusta
 // - simulatore: "Prova tu", un cursore sul danno che mostra chi paga cosa
+// - rinnovo: "Il tuo rinnovo", solo per chi è già assicurato: scadenza + checklist (lib/rinnovo.ts)
 
 export type Blocco =
   | { stile: "testo" | "azzurro" | "rosa" | "giallo"; testo: string }
@@ -17,7 +18,8 @@ export type Card =
   | { tipo: "domanda"; emoji: string; testo: string; risposte: string[]; corretta: number }
   | { tipo: "vero_falso"; emoji: string; testo: string; vero: boolean }
   | { tipo: "sondaggio"; testo: string; risposte: string[] }
-  | { tipo: "simulatore"; emoji: string; testo: string; franchigia: number; massimale: number; dannoMax: number };
+  | { tipo: "simulatore"; emoji: string; testo: string; franchigia: number; massimale: number; dannoMax: number }
+  | { tipo: "rinnovo" };
 
 export type Lezione = {
   emoji: string;
@@ -310,6 +312,7 @@ export const LEZIONI: Lezione[] = [
           { stile: "rosa", testo: "Capita di pagare per anni una copertura che non serve più, mentre manca quella che servirebbe." },
         ],
       },
+      { tipo: "rinnovo" },
       {
         tipo: "sondaggio",
         testo: "Quando hai riletto l'ultima volta una tua polizza?",

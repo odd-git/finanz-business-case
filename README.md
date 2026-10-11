@@ -25,6 +25,28 @@ Il prototipo riproduce l'app Finanz: Home, Academy, mappa del percorso "Assicura
 
 `Policy Activated` arriva dal partner giorni dopo, quindi qui non c'è.
 
+## Feature "Il tuo rinnovo"
+
+Per chi all'onboarding risponde "Sì, ne ho già una o più" (Giulia, Sara e Paolo tra gli utenti di prova). Per gli altri il percorso resta com'è.
+
+- **Lezione 4, dopo la card "Ce l'hai già?"**: la card "Il tuo rinnovo" chiede il mese di scadenza della polizza (o "Non lo so") e propone la checklist "Rileggi la tua" (Lo so / Non lo so).
+- **Schermata partner**: la strada dipende dalla scadenza.
+  - finestra aperta (RC auto entro 2 mesi, altri rami entro 3) → "Confronta ora";
+  - finestra lontana → "Avvisami prima della scadenza" (30 giorni prima per l'RC auto, 90 per gli altri rami), con "Confronta comunque ora" come seconda scelta;
+  - "Non lo so" → "Confronta le polizze", con il promemoria come link secondario.
+- Nel pannello tester, per gli utenti già assicurati, la scorciatoia **Vai a "Il tuo rinnovo"** porta direttamente alla card.
+
+Il prototipo mostra solo la variante nuova: nel test vero il 20% dei già assicurati resterebbe sul percorso di oggi. Il promemoria è simulato (nessuna notifica parte).
+
+| Schermata | Evento Mixpanel |
+|---|---|
+| Card "Il tuo rinnovo", mese scelto | `Renewal Month Set` (`renewal_month`, `months_to_expiry`, `window`) |
+| Card "Il tuo rinnovo", checklist completata | `Policy Checklist Completed` (`known`, `total`) |
+| Schermata partner, promemoria attivato | `Reminder Opt-in` (`window`, `reminder_days_before`) |
+| Schermata partner, comparatore, preventivo | `Partner Screen Viewed`, `Partner CTA Clicked`, `Quote Requested` con `window`: `open` / `far` / `unknown` |
+
+Le soglie stanno in `lib/rinnovo.ts`; `node lib/rinnovo.check.mts` le verifica.
+
 Sugli schermi larghi, il pannello a destra mostra gli eventi mentre usi il percorso. Dalla striscia verde in cima alla Home (o dall'avatar) cambi utente di prova: ognuno ha un ramo e una risposta diversa alla domanda di onboarding "Hai attualmente delle assicurazioni?". Lì trovi anche le scorciatoie per ricominciare o saltare al quiz e alla schermata partner. L'avanzamento resta salvato nel browser.
 
 ```

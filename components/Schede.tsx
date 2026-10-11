@@ -3,6 +3,9 @@
 import { useState } from "react";
 import type { Blocco, Card } from "@/lib/percorso";
 import { BottomBar, Icona, IconaEsito, PrimaryButton, SheetScheda } from "@/components/ui";
+import { useUtente } from "@/components/Providers";
+import { NOME_RAMO } from "@/lib/utenti";
+import { MESI, finestra, mesiAllaScadenza, vociChecklist } from "@/lib/rinnovo";
 
 // Le card di una lezione, con lo stesso aspetto dell'app.
 // onAvanti viene chiamato quando l'utente può passare alla card successiva;
@@ -12,6 +15,7 @@ export function Scheda({ card, onAvanti }: { card: Card; onAvanti: (primaGiusta?
   if (card.tipo === "teoria") return <SchedaTeoria card={card} onAvanti={() => onAvanti()} />;
   if (card.tipo === "sondaggio") return <SchedaSondaggio card={card} onAvanti={() => onAvanti()} />;
   if (card.tipo === "simulatore") return <SchedaSimulatore card={card} onAvanti={() => onAvanti()} />;
+  if (card.tipo === "rinnovo") return <SchedaRinnovo onAvanti={() => onAvanti()} />;
   if (card.tipo === "vero_falso")
     return (
       <SchedaDomanda
@@ -266,6 +270,139 @@ function SchedaSimulatore({ card, onAvanti }: { card: Extract<Card, { tipo: "sim
         <PrimaryButton disabled={!mosso} onClick={onAvanti}>
           Continua
         </PrimaryButton>
+      </BottomBar>
+    </>
+  );
+}
+
+// "Il tuo rinnovo", solo per chi è già assicurato: tre passi nella stessa card.
+// 1. il mese di scadenza  2. la checklist "Rileggi la tua"  3. cosa succede alla fine del percorso.
+// Neutrale: chiede e insegna, non giudica la polizza e non ne consiglia un'altra.
+function SchedaRinnovo({ onAvanti }: { onAvanti: () => void }) {
+  const { utente, track, salvaRinnovo } = useUtente();
+  const [passo, setPasso] = useState<"mese" | "checklist" | "esito">("mese");
+  const [mese, setMese] = useState<number | null | undefined>(undefined); // undefined = non ancora scelto
+  const voci = vociChecklist(utente.ramo);
+  const [sa, setSa] = useState<(boolean | undefined)[]>(() => voci.map(() => undefined));
+  const badge = (
+    <span className="rounded-full bg-badge-sondaggio px-5 py-2 text-base font-bold tracking-tight uppercase">🔁 Il tuo rinnovo</span>
+  );
+
+  if (passo === "mese")
+    return (
+      <>
+        <Riquadro badge={badge}>
+          <span className="text-[88px] leading-none">📅</span>
+          <p className="text-center text-lg leading-snug font-semibold text-ink/80">
+            Quando scade la tua polizza {NOME_RAMO[utente.ramo]}?
+          </p>
+          <p className="-mt-3 text-center text-sm text-muted">Basta il mese: lo trovi sul contratto o nell&apos;app della tua compagnia.</p>
+          <div className="grid w-full grid-cols-3 gap-2">
+            {MESI.map((m, i) => (
+              <button
+                key={m}
+                onClick={() => setMese(i)}
+                className={`rounded-2xl border-[1.5px] py-3 text-base capitalize text-ink/80 transition active:scale-[0.98] ${
+                  mese === i ? "border-forest bg-soft" : "border-line"
+                }`}
+              >
+                {m.slice(0, 3)}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setMese(null)}
+            className={`w-full rounded-2xl border-[1.5px] py-3 text-base text-ink/80 transition active:scale-[0.98] ${
+              mese === null ? "border-forest bg-soft" : "border-line"
+            }`}
+          >
+            Non lo so
+          </button>
+        </Riquadro>
+        <BottomBar>
+          <PrimaryButton
+            disabled={mese === undefined}
+            onClick={() => {
+              if (mese === undefined) return;
+              track("Renewal Month Set", {
+                renewal_month: mese === null ? "unknown" : mese + 1,
+                months_to_expiry: mese === null ? "unknown" : mesiAllaScadenza(mese, new Date()),
+                window: finestra(utente.ramo, mese),
+              });
+              setPasso("checklist");
+            }}
+          >
+            Continua
+          </PrimaryButton>
+        </BottomBar>
+      </>
+    );
+
+  if (passo === "checklist")
+    return (
+      <>
+        <Riquadro badge={badge}>
+          <span className="text-[88px] leading-none">🔍</span>
+          <p className="text-center text-lg leading-snug font-semibold text-ink/80">Rileggi la tua: cosa sai della tua polizza?</p>
+          <div className="flex w-full flex-col gap-3">
+            {voci.map((v, i) => (
+              <div key={v} className="flex flex-col gap-2 rounded-2xl border-[1.5px] border-line px-4 py-3">
+                <p className="font-semibold text-ink/80">{v}</p>
+                <div className="flex gap-2">
+                  {[true, false].map((x) => (
+                    <button
+                      key={String(x)}
+                      onClick={() => setSa((s) => s.map((y, j) => (j === i ? x : y)))}
+                      className={`flex-1 rounded-full border-[1.5px] py-2 text-sm transition active:scale-[0.98] ${
+                        sa[i] === x ? "border-forest bg-soft font-semibold" : "border-line text-ink/70"
+                      }`}
+                    >
+                      {x ? "Lo so" : "Non lo so"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Riquadro>
+        <BottomBar>
+          <PrimaryButton
+            disabled={sa.some((x) => x === undefined)}
+            onClick={() => {
+              track("Policy Checklist Completed", { known: sa.filter(Boolean).length, total: voci.length });
+              salvaRinnovo({ mese: mese ?? null });
+              setPasso("esito");
+            }}
+          >
+            Continua
+          </PrimaryButton>
+        </BottomBar>
+      </>
+    );
+
+  const noti = sa.filter(Boolean).length;
+  const f = finestra(utente.ramo, mese ?? null);
+  const quando = mese === null || mese === undefined ? null : MESI[mese];
+  return (
+    <>
+      <div className="flex flex-col gap-4 px-4 pt-6 pb-8">
+        <h1 className="text-[34px] leading-tight font-bold tracking-tight">
+          <span className="mr-1">🧾</span>
+          Sai {noti} cose su {voci.length}
+        </h1>
+        <p className="text-lg leading-snug font-semibold">
+          {noti === voci.length
+            ? "Conosci bene la tua polizza: è il punto di partenza per confrontarla."
+            : "Quelle che non sai sono scritte nel contratto: sono le prime da guardare prima del rinnovo."}
+        </p>
+        <p className="rounded-2xl bg-box-azzurro px-6 py-4 text-lg leading-relaxed">
+          {f === "open" && `La tua polizza scade a ${quando}: è il momento giusto per confrontarla. Alla fine del percorso trovi il confronto.`}
+          {f === "far" && `La tua polizza scade a ${quando}: confrontarla adesso servirebbe a poco. Alla fine del percorso puoi chiederci di avvisarti in tempo.`}
+          {f === "unknown" && "Alla fine del percorso puoi confrontare subito, oppure cercare la data con calma: ti avvisiamo noi."}
+        </p>
+      </div>
+      <BottomBar>
+        <PrimaryButton onClick={onAvanti}>Continua</PrimaryButton>
       </BottomBar>
     </>
   );

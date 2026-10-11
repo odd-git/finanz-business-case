@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUtente } from "@/components/Providers";
 import { NOME_RAMO, type Ramo } from "@/lib/utenti";
+import { finestraUtente } from "@/lib/rinnovo";
 
 // Sito del comparatore partner, simulato. Nella realtà non lo controlliamo noi:
 // "Quote Requested" e "Policy Activated" ci arrivano come postback del partner.
@@ -23,7 +24,8 @@ const DOPO: Partial<Record<Ramo, string>> = {
 };
 
 export default function Comparatore() {
-  const { utente, track } = useUtente();
+  const { utente, track, progresso } = useUtente();
+  const fin = finestraUtente(utente.onboarding_intent, utente.ramo, progresso.rinnovo);
   const [inviato, setInviato] = useState(false);
   const router = useRouter();
 
@@ -54,7 +56,7 @@ export default function Comparatore() {
           className="flex flex-col gap-4 px-4 py-6"
           onSubmit={(e) => {
             e.preventDefault();
-            track("Quote Requested", { source: "partner_postback" });
+            track("Quote Requested", { source: "partner_postback", ...(fin && { window: fin }) });
             setInviato(true);
           }}
         >

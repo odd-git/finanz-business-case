@@ -12,6 +12,8 @@ export type Progresso = {
   lezioni: number; // lezioni completate, da 0 a LEZIONI.length
   quiz: boolean;
   kiwiExtra: number;
+  // "Il tuo rinnovo": mese di scadenza (0-11, null = "Non lo so") e promemoria attivato
+  rinnovo?: { mese: number | null; promemoria?: boolean };
 };
 
 const VUOTO: Progresso = { lezioni: 0, quiz: false, kiwiExtra: 0 };
@@ -25,6 +27,7 @@ type Ctx = {
   completaLezione: (indice: number) => void;
   completaQuiz: (kiwi: number) => void;
   impostaProgresso: (p: Progresso) => void;
+  salvaRinnovo: (r: NonNullable<Progresso["rinnovo"]>) => void;
   track: (event: NomeEvento, properties?: Record<string, string | number>) => void;
   toast: (testo: string) => void;
 };
@@ -90,6 +93,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const impostaProgresso = useCallback((p: Progresso) => aggiorna(() => p), [aggiorna]);
 
+  const salvaRinnovo = useCallback(
+    (rinnovo: NonNullable<Progresso["rinnovo"]>) => aggiorna((p) => ({ ...p, rinnovo })),
+    [aggiorna],
+  );
+
   const setUtente = useCallback((id: string) => {
     if (UTENTI.some((u) => u.id === id)) setUtenteId(id);
   }, []);
@@ -115,7 +123,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <UtenteContext.Provider
-      value={{ utente, setUtente, progresso, kiwi, completaLezione, completaQuiz, impostaProgresso, track, toast }}
+      value={{ utente, setUtente, progresso, kiwi, completaLezione, completaQuiz, impostaProgresso, salvaRinnovo, track, toast }}
     >
       {children}
       {messaggio && (

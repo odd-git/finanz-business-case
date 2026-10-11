@@ -10,7 +10,11 @@ export type NomeEvento =
   | "Partner Screen Viewed"
   | "Partner CTA Clicked"
   | "Quote Requested"
-  | "Policy Activated";
+  | "Policy Activated"
+  // "Il tuo rinnovo"
+  | "Renewal Month Set"
+  | "Policy Checklist Completed"
+  | "Reminder Opt-in";
 
 export type Evento = {
   event: NomeEvento;
