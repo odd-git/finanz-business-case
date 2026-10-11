@@ -34,7 +34,11 @@ export default function SchermataPartner() {
   };
 
   const avvisami = () => {
-    track("Reminder Opt-in", { window: fin ?? "unknown", reminder_days_before: PREAVVISO_GIORNI[utente.ramo] });
+    track("Reminder Opt-in", {
+      window: fin ?? "unknown",
+      reminder_days_before: PREAVVISO_GIORNI[utente.ramo],
+      placement: "partner_screen",
+    });
     salvaRinnovo({ mese, promemoria: true });
     toast("Promemoria attivato 🔔");
   };

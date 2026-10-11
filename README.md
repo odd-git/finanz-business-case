@@ -29,7 +29,7 @@ Il prototipo riproduce l'app Finanz: Home, Academy, mappa del percorso "Assicura
 
 Per chi all'onboarding risponde "Sì, ne ho già una o più" (Giulia, Sara e Paolo tra gli utenti di prova). Per gli altri il percorso resta com'è.
 
-- **Lezione 4, dopo la card "Ce l'hai già?"**: la card "Il tuo rinnovo" chiede il mese di scadenza della polizza (o "Non lo so") e propone la checklist "Rileggi la tua" (Lo so / Non lo so).
+- **Lezione 4, dopo la card "Ce l'hai già?"**: la card "Il tuo rinnovo" chiede il mese di scadenza della polizza (o "Non lo so") e propone la checklist "Rileggi la tua" (Lo so / Non lo so). Nel riepilogo, se la finestra è lontana o la data non è nota, propone subito il promemoria ("Avvisami prima della scadenza" / "Continua senza promemoria").
 - **Schermata partner**: la strada dipende dalla scadenza.
   - finestra aperta (RC auto entro 2 mesi, altri rami entro 3) → "Confronta ora";
   - finestra lontana → "Avvisami prima della scadenza" (30 giorni prima per l'RC auto, 90 per gli altri rami), con "Confronta comunque ora" come seconda scelta;
@@ -42,7 +42,7 @@ Il prototipo mostra solo la variante nuova: nel test vero il 20% dei già assicu
 |---|---|
 | Card "Il tuo rinnovo", mese scelto | `Renewal Month Set` (`renewal_month`, `months_to_expiry`, `window`) |
 | Card "Il tuo rinnovo", checklist completata | `Policy Checklist Completed` (`known`, `total`) |
-| Schermata partner, promemoria attivato | `Reminder Opt-in` (`window`, `reminder_days_before`) |
+| Promemoria attivato, nella lezione o sulla schermata partner | `Reminder Opt-in` (`window`, `reminder_days_before`, `placement`: `lesson` / `partner_screen`) |
 | Schermata partner, comparatore, preventivo | `Partner Screen Viewed`, `Partner CTA Clicked`, `Quote Requested` con `window`: `open` / `far` / `unknown` |
 
 Le soglie stanno in `lib/rinnovo.ts`; `node lib/rinnovo.check.mts` le verifica.

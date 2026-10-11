@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import type { Blocco, Card } from "@/lib/percorso";
-import { BottomBar, Icona, IconaEsito, PrimaryButton, SheetScheda } from "@/components/ui";
+import { BottomBar, Icona, IconaEsito, PrimaryButton, SecondaryButton, SheetScheda } from "@/components/ui";
 import { useUtente } from "@/components/Providers";
 import { NOME_RAMO } from "@/lib/utenti";
-import { MESI, finestra, mesiAllaScadenza, vociChecklist } from "@/lib/rinnovo";
+import { MESI, PREAVVISO_GIORNI, finestra, mesiAllaScadenza, vociChecklist } from "@/lib/rinnovo";
 
 // Le card di una lezione, con lo stesso aspetto dell'app.
 // onAvanti viene chiamato quando l'utente può passare alla card successiva;
@@ -276,10 +276,11 @@ function SchedaSimulatore({ card, onAvanti }: { card: Extract<Card, { tipo: "sim
 }
 
 // "Il tuo rinnovo", solo per chi è già assicurato: tre passi nella stessa card.
-// 1. il mese di scadenza  2. la checklist "Rileggi la tua"  3. cosa succede alla fine del percorso.
+// 1. il mese di scadenza  2. la checklist "Rileggi la tua"  3. cosa significa per te, con il promemoria
+// (proposto qui, dove l'interesse è più alto; la schermata partner lo ripropone a chi l'ha saltato).
 // Neutrale: chiede e insegna, non giudica la polizza e non ne consiglia un'altra.
 function SchedaRinnovo({ onAvanti }: { onAvanti: () => void }) {
-  const { utente, track, salvaRinnovo } = useUtente();
+  const { utente, track, salvaRinnovo, progresso } = useUtente();
   const [passo, setPasso] = useState<"mese" | "checklist" | "esito">("mese");
   const [mese, setMese] = useState<number | null | undefined>(undefined); // undefined = non ancora scelto
   const voci = vociChecklist(utente.ramo);
@@ -380,6 +381,7 @@ function SchedaRinnovo({ onAvanti }: { onAvanti: () => void }) {
       </>
     );
 
+  const attivo = progresso.rinnovo?.promemoria ?? false;
   const noti = sa.filter(Boolean).length;
   const f = finestra(utente.ramo, mese ?? null);
   const quando = mese === null || mese === undefined ? null : MESI[mese];
@@ -397,12 +399,29 @@ function SchedaRinnovo({ onAvanti }: { onAvanti: () => void }) {
         </p>
         <p className="rounded-2xl bg-box-azzurro px-6 py-4 text-lg leading-relaxed">
           {f === "open" && `La tua polizza scade a ${quando}: è il momento giusto per confrontarla. Alla fine del percorso trovi il confronto.`}
-          {f === "far" && `La tua polizza scade a ${quando}: confrontarla adesso servirebbe a poco. Alla fine del percorso puoi chiederci di avvisarti in tempo.`}
-          {f === "unknown" && "Alla fine del percorso puoi confrontare subito, oppure cercare la data con calma: ti avvisiamo noi."}
+          {f === "far" &&
+            `La tua polizza scade a ${quando}: confrontarla adesso servirebbe a poco. Ti possiamo avvisare ${PREAVVISO_GIORNI[utente.ramo]} giorni prima, in tempo per ${utente.ramo === "rc_auto" ? "scegliere con calma" : "mandare la disdetta se decidi di cambiare"}.`}
+          {f === "unknown" &&
+            "Cerca la data sul contratto con calma: ti ricordiamo noi di farlo. E alla fine del percorso puoi anche confrontare subito."}
         </p>
+        {attivo && <p className="rounded-2xl bg-box-viola px-6 py-4 text-lg leading-relaxed">🔔 Promemoria attivo ✓</p>}
       </div>
       <BottomBar>
-        <PrimaryButton onClick={onAvanti}>Continua</PrimaryButton>
+        {f === "open" || attivo ? (
+          <PrimaryButton onClick={onAvanti}>Continua</PrimaryButton>
+        ) : (
+          <>
+            <PrimaryButton
+              onClick={() => {
+                track("Reminder Opt-in", { window: f, reminder_days_before: PREAVVISO_GIORNI[utente.ramo], placement: "lesson" });
+                salvaRinnovo({ mese: mese ?? null, promemoria: true });
+              }}
+            >
+              Avvisami prima della scadenza 🔔
+            </PrimaryButton>
+            <SecondaryButton onClick={onAvanti}>Continua senza promemoria</SecondaryButton>
+          </>
+        )}
       </BottomBar>
     </>
   );
