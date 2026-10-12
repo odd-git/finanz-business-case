@@ -131,6 +131,28 @@ for g in ["Già assicurati", "Ci sto pensando", "No"]:
     print(f"  {g:16} media {sum(u['quiz'] for u in us) / len(us):.2f} |",
           " ".join(f"{q}:{n(v, CTA)}/{len(v)}" for q, v in by.items()))
 
+print("\nAltri segnali")
+seen_screen = Counter(r["distinct_id"] for r in clean if r["event"] == SCREEN)
+t_first = {}
+for r in clean:
+    t_first.setdefault((r["distinct_id"], r["event"]), datetime.fromisoformat(r["time"]))
+to_cta = [(t_first[k, CTA] - t_first[k, SCREEN]).total_seconds() for (k, e) in t_first if e == CTA]
+print(f"  Schermata partner vista per utente: {dict(Counter(seen_screen.values()))} | secondi schermata->click: max {max(to_cta):.0f}")
+print(f"  Percorso completato -> schermata partner: {pct(n(U, SCREEN), n(U, 'Path Completed'))}"
+      f" ({n(U, 'Path Completed') - n(U, SCREEN)} utenti persi)")
+v411 = [u for u in U if u["ver"].startswith("4.11")]
+v412 = [u for u in U if u["ver"].startswith("4.12")]
+k1, n1, k2, n2 = n(v411, CTA), n(v411, SCREEN), n(v412, CTA), n(v412, SCREEN)
+pp = (k1 + k2) / (n1 + n2)
+print(f"  Click 4.11.x {pct(k1, n1)} vs 4.12.x {pct(k2, n2)}  z={(k1 / n1 - k2 / n2) / math.sqrt(pp * (1 - pp) * (1 / n1 + 1 / n2)):.2f}")
+fast = [k for (k, e) in t_first if e == QUOTE and (t_first[k, QUOTE] - t_first[k, CTA]).total_seconds() < 6 * 3600]
+slow = [k for (k, e) in t_first if e == QUOTE and k not in set(fast)]
+print(f"  Polizza|preventivo: preventivo entro 6h dal click {pct(sum((k, POLICY) in t_first for k in fast), len(fast))}"
+      f" vs dopo {pct(sum((k, POLICY) in t_first for k in slow), len(slow))}")
+vita = [u for u in U if u["ramo"] == "vita"]
+lo, hi = wilson(n(vita, POLICY), n(vita, QUOTE))
+print(f"  Vita polizza|preventivo {n(vita, POLICY)}/{n(vita, QUOTE)} = {pct(n(vita, POLICY), n(vita, QUOTE))} [{100 * lo:.0f}%-{100 * hi:.0f}%]")
+
 print("Polizza|preventivo con intervallo di confidenza 95% (Wilson):")
 for g in ["Già assicurati", "Ci sto pensando", "No"]:
     us = [u for u in U if u["intent"] == g]
