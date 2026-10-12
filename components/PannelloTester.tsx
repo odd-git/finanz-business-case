@@ -7,8 +7,9 @@ import { UTENTI, NOME_RAMO } from "@/lib/utenti";
 import { LEZIONI, PERCORSO } from "@/lib/percorso";
 import { GIA_ASSICURATO } from "@/lib/rinnovo";
 
-// Posizione della card "Il tuo rinnovo" nell'ultima lezione (chi la vede è già assicurato, quindi nessun filtro).
-const CARD_RINNOVO = LEZIONI[LEZIONI.length - 1].card.findIndex((c) => c.tipo === "rinnovo");
+// La scorciatoia parte dalla card originale "Ce l'hai già?", subito prima di "Il tuo rinnovo":
+// chi prova vede prima la teoria e poi l'azione. Chi la usa è già assicurato, quindi nessun filtro sulle card.
+const CARD_RINNOVO = LEZIONI[LEZIONI.length - 1].card.findIndex((c) => c.tipo === "rinnovo") - 1;
 
 // Strumenti per chi prova il prototipo: non esistono nell'app vera.
 // Cambi utente di prova e salti avanti nel percorso senza rifare tutte le lezioni.

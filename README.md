@@ -34,7 +34,7 @@ Per chi all'onboarding risponde "Sì, ne ho già una o più" (Giulia, Sara e Pao
   - finestra aperta (RC auto entro 2 mesi, altri rami entro 3) → "Confronta ora";
   - finestra lontana → "Avvisami prima della scadenza" (30 giorni prima per l'RC auto, 90 per gli altri rami), con "Confronta comunque ora" come seconda scelta;
   - "Non lo so" → "Confronta le polizze", con il promemoria come link secondario.
-- Nel pannello tester, per gli utenti già assicurati, la scorciatoia **Vai a "Il tuo rinnovo"** porta direttamente alla card.
+- Nel pannello tester, per gli utenti già assicurati, la scorciatoia **Vai a "Il tuo rinnovo"** apre la card "Ce l'hai già?", subito prima della card nuova.
 
 Il prototipo mostra solo la variante nuova: nel test vero il 20% dei già assicurati resterebbe sul percorso di oggi. Il promemoria è simulato (nessuna notifica parte).
 
